@@ -79,21 +79,21 @@ ui <- fluidPage(
         ",
         # language toggle
         # needs to defined statically to avoid circular reactivity
-        actionButton(
-          "lang_toggle",
-          "FR",
-          style = "
-              color: gray;
-              font-weight: bold;
-              border: 0px;
-              /* to move outside the bounds of its parent */
-              position: absolute;
-              bottom: -37px;
-              right: 2vw;
-              /* to ensure the button is above the divs it overlaps */
-              z-index: 1000;
-            "
-        )
+        # actionButton(
+        #   "lang_toggle",
+        #   "FR",
+        #   style = "
+        #       color: gray;
+        #       font-weight: bold;
+        #       border: 0px;
+        #       /* to move outside the bounds of its parent */
+        #       position: absolute;
+        #       bottom: -37px;
+        #       right: 2vw;
+        #       /* to ensure the button is above the divs it overlaps */
+        #       z-index: 1000;
+        #     "
+        # )
       ),
       sidebarLayout(
         fluid = TRUE,
