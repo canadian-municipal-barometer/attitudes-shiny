@@ -1,78 +1,81 @@
 library(shiny)
 
-# uses switch statements to convert french to english, because the model only
-# runs on English values.
-# Also converts the input object to a list, which is required by
-# `render_attitudes_plot` even when no language translation occurs.
+# The nine demographic menus, in sidebar order. Shared by `build_subgroup` and
+# `empty_selections` so the canonical variable list lives in one place.
+demographic_vars <- c(
+  "province", "popcat", "gender", "agecat", "race",
+  "immigrant", "homeowner", "education", "income"
+)
+
+# Vectorized French -> English lookup. `x` may be a character vector (the
+# sidebar menus are now multi-select), NULL, or empty. Values not found in
+# `map` (e.g. values that are already English, or identical in both languages)
+# are passed through unchanged. NULL / empty selections are returned as-is,
+# which the plot logic treats as "all values" (no filter on that variable).
+recode_vec <- function(x, map) {
+  if (is.null(x) || length(x) == 0) {
+    return(x)
+  }
+  out <- unname(map[x])
+  out[is.na(out)] <- x[is.na(out)]
+  out
+}
+
+# Converts the input object to a list of (possibly multi-value) selections,
+# translating any French menu labels back to English, because the model only
+# runs on English values. A list is required by `render_attitudes_plot` even
+# when no language translation occurs.
 un_translate_input <- function(input) {
   cat("---`un_translate_input` ran")
-  selected <- list()
 
-  selected["province"] <- input$province |>
-    switch(
-      "Alberta" = "Alberta",
-      "Colombie-Britannique" = "British Columbia",
-      "Manitoba" = "Manitoba",
-      "Nouveau-Brunswick" = "New Brunswick",
-      "Terre-Neuve-et-Labrador" = "Newfoundland and Labrador",
-      "Nouvelle-Écosse" = "Nova Scotia",
-      "Ontario" = "Ontario",
-      "Île-du-Prince-Édouard" = "Prince Edward Island",
-      "Québec" = "Quebec",
-      "Saskatchewan" = "Saskatchewan",
-      input$province
-    )
+  province_map <- c(
+    "Colombie-Britannique" = "British Columbia",
+    "Nouveau-Brunswick" = "New Brunswick",
+    "Terre-Neuve-et-Labrador" = "Newfoundland and Labrador",
+    "Nouvelle-Écosse" = "Nova Scotia",
+    "Île-du-Prince-Édouard" = "Prince Edward Island",
+    "Québec" = "Quebec"
+  )
 
-  selected["agecat"] <- input$agecat
+  gender_map <- c(
+    "Homme" = "Man",
+    "Femme" = "Woman"
+  )
 
-  selected["popcat"] <- input$popcat
+  race_map <- c(
+    "Minorité racisée" = "Racialized minority",
+    "Blanc·che" = "White"
+  )
 
-  selected["gender"] <- input$gender |>
-    switch(
-      "Homme" = "Man",
-      "Femme" = "Woman",
-      input$gender
-    )
+  yes_no_map <- c(
+    "Oui" = "Yes",
+    "Non" = "No"
+  )
 
-  selected["race"] <- input$race |>
-    switch(
-      "Minorité racisée" = "Racialized minority",
-      "Blanc·che" = "White",
-      input$race
-    )
+  education_map <- c(
+    "Moins que les études secondaires" = "Less than high school",
+    "Diplôme d’études secondaires" = "High school",
+    "Apprentissage/Diplôme d’études professionnelles (DEP)" = "Associate's degree or trades", # nolint
+    "Baccalauréat" = "Bachelor's degree",
+    "Maitrise, doctorat, diplôme professionnel" = "Post-graduate degree"
+  )
 
-  selected["immigrant"] <- input$immigrant |>
-    switch(
-      "Oui" = "Yes",
-      "Non" = "No",
-      input$immigrant
-    )
+  income_map <- c(
+    "Moins de $49,999" = "Less than $49,999",
+    "200,000 $ ou plus" = "$200,000 or more"
+  )
 
-  selected["homeowner"] <- input$homeowner |>
-    switch(
-      "Oui" = "Yes",
-      "Non" = "No",
-      input$homeowner
-    )
-
-  selected["education"] <- input$education |>
-    switch(
-      "Moins que les études secondaires" = "Less than high school",
-      "Diplôme d’études secondaires" = "High school",
-      "Apprentissage/Diplôme d’études professionnelles (DEP)" = "Associate's degree or trades", # nolint
-      "Baccalauréat" = "Bachelor's degree",
-      "Maitrise, doctorat, diplôme professionnel" = "Post-graduate degree",
-      input$education
-    )
-
-  selected["income"] <- input$income |>
-    switch(
-      "Moins de $49,999" = "Less than $49,999",
-      "200,000 $ ou plus" = "$200,000 or more",
-      input$income
-    )
-
-  return(selected)
+  list(
+    province = recode_vec(input$province, province_map),
+    agecat = input$agecat,
+    popcat = input$popcat,
+    gender = recode_vec(input$gender, gender_map),
+    race = recode_vec(input$race, race_map),
+    immigrant = recode_vec(input$immigrant, yes_no_map),
+    homeowner = recode_vec(input$homeowner, yes_no_map),
+    education = recode_vec(input$education, education_map),
+    income = recode_vec(input$income, income_map)
+  )
 }
 
 statements_update <- function(
@@ -105,6 +108,50 @@ filter_statements <- function(statements, svy_data_r, policy) {
   val <- statements()$var_name[index]
   tbl <- svy_data_r() |> dplyr::filter(policy == val)
   return(tbl)
+}
+
+# Subset the survey data to the demographic subgroup the user selected. Each
+# menu may hold one or more values; an empty / NULL selection means "all
+# values", so that variable is simply left unfiltered. Variables are combined
+# with AND, values within a variable with OR (via `%in%`).
+build_subgroup <- function(svy, user_selected, demog_vars = demographic_vars) {
+  keep <- rep(TRUE, nrow(svy))
+  for (v in demog_vars) {
+    sel <- user_selected[[v]]
+    if (!is.null(sel) && length(sel) > 0) {
+      keep <- keep & (svy[[v]] %in% sel)
+    }
+  }
+  svy[keep, , drop = FALSE]
+}
+
+# Names of the demographic menus that currently have nothing selected (NULL or
+# empty), in sidebar order. Menus combine with AND, so any empty menu makes the
+# subgroup empty; the app uses this to prompt the user to pick something instead
+# of silently pooling that whole dimension.
+empty_selections <- function(user_selected, demog_vars = demographic_vars) {
+  is_empty <- vapply(demog_vars, function(v) {
+    sel <- user_selected[[v]]
+    is.null(sel) || length(sel) == 0
+  }, logical(1))
+  demog_vars[is_empty]
+}
+
+# Pool a subgroup's predicted outcome probabilities into a single estimate by
+# taking the survey-weighted mean of each outcome column, returned as rounded
+# percentages. `pred_probs` is the `predict(..., type = "probs")` output: a
+# matrix (one row per respondent) or, for a single respondent, a named vector.
+pool_preds <- function(pred_probs, weights) {
+  if (is.null(dim(pred_probs))) {
+    # a single matching respondent yields a named vector, not a matrix
+    pred_probs <- matrix(
+      pred_probs,
+      nrow = 1,
+      dimnames = list(NULL, names(pred_probs))
+    )
+  }
+  preds <- apply(pred_probs, 2, stats::weighted.mean, w = weights)
+  round(preds * 100, 0)
 }
 
 simple_plot <- function(preds) {
@@ -173,7 +220,10 @@ build_plot <- function(
 ) {
   if (show_natl_avg()) {
     # prepare data, assuming English is the current language
-    policy_i <- filtered_svy_data_r()$policy[1]
+    # `policy` is a factor; coerce to character so `natl_avg[[...]]` looks up by
+    # name (the statement id) rather than by the factor's integer level code,
+    # which would return a different policy's national average.
+    policy_i <- as.character(filtered_svy_data_r()$policy[1])
     natl_avg_i <- natl_avg[[policy_i]]
     natl_avg_i$fill_group <- "National average"
     preds$fill_group <- preds$cats

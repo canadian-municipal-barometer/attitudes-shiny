@@ -23,6 +23,10 @@ natl_avg <- readRDS("data/natl_avg.rds")
 input_err_en <- "The combination of the policy question and demographic characteristics that you have selected aren't in the data. Please make another selection." # nolint
 input_err_fr <- "La combinaison de la question de politique publique et des caractéristiques démographiques que vous avez sélectionnée ne figure pas dans les données. Veuillez faire une autre sélection." # nolint
 
+# the prompt shown when a demographic menu has been emptied
+select_prompt_en <- "Please select at least one option in every menu to see the opinion estimates." # nolint
+select_prompt_fr <- "Veuillez sélectionner au moins une option dans chaque menu pour afficher les estimations." # nolint
+
 # load translation file to create shiny.i18n translator object
 translator <- shiny.i18n::Translator$new(
   translation_csvs_path = "data/translation/"
@@ -37,6 +41,7 @@ server <- function(input, output, session) {
   statement_tags_r <- reactiveVal(statement_tags_en) # nolint
   svy_data_r <- reactiveVal(svy_data) #nolint
   input_err_r <- reactiveVal(input_err_en)
+  select_prompt_r <- reactiveVal(select_prompt_en)
   lang_toggle_in_progress <- reactiveVal(FALSE)
 
   # Handle language toggle of data
@@ -49,6 +54,7 @@ server <- function(input, output, session) {
       statements_r(statements_fr)
       statement_tags_r(statement_tags_fr)
       input_err_r(input_err_fr)
+      select_prompt_r(select_prompt_fr)
 
       # Update without shiny.i18n to avoid circular dependency
       updateActionButton(session, "lang_toggle", label = "EN")
@@ -58,6 +64,7 @@ server <- function(input, output, session) {
       statements_r(statements_en)
       statement_tags_r(statement_tags_en)
       input_err_r(input_err_en)
+      select_prompt_r(select_prompt_en)
 
       updateActionButton(session, "lang_toggle", label = "FR")
     }
@@ -169,6 +176,7 @@ server <- function(input, output, session) {
     current_lang_r = current_lang_r,
     user_selected = user_selected,
     input_err_r = input_err_r,
+    select_prompt_r = select_prompt_r,
     lang_toggle_in_progress
   )
 

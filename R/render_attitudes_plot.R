@@ -8,6 +8,7 @@ render_attitudes_plot <- function(
   current_lang_r,
   user_selected,
   input_err_r,
+  select_prompt_r,
   lang_toggle_in_progress
 ) {
   plot <- reactive(
@@ -20,15 +21,34 @@ render_attitudes_plot <- function(
       filtered_svy_data_r <- isolate(filtered_svy_data_r)
       user_selected <- user_selected()
 
-      # verify that data has the levels needed for the model to run
+      svy <- filtered_svy_data_r()
+
+      # every menu must have at least one value selected; if any is empty, prompt
+      # the user to choose rather than pooling that whole dimension
       validate(
         need(
-          user_selected["province"] %in% filtered_svy_data_r()$province,
+          length(empty_selections(user_selected)) == 0,
+          select_prompt_r()
+        )
+      )
+
+      # Build the selected subgroup from the (policy-filtered) survey data. Each
+      # menu holds one or more values; pooling over multiple selected values
+      # happens by averaging the model's predicted probabilities across the
+      # matching respondents (below).
+      subgroup <- build_subgroup(svy, user_selected)
+
+      # verify the selected combination matches at least one respondent
+      validate(
+        need(
+          nrow(subgroup) > 0,
           input_err_r()
         )
       )
 
       # an immediately invoked function
+      # the model is fit on all of the policy's data; the menu selections only
+      # determine which respondents the predictions are pooled over.
       model <- (function() {
         sink("/dev/null") # disable console logging
         model <- nnet::multinom(
@@ -42,8 +62,8 @@ render_attitudes_plot <- function(
               factor(income) +
               factor(immigrant) +
               factor(popcat), # nolint
-          data = filtered_svy_data_r(),
-          weights = filtered_svy_data_r()$wgt
+          data = svy,
+          weights = svy$wgt
         )
         sink()
         if (!is.null(model)) {
@@ -56,20 +76,11 @@ render_attitudes_plot <- function(
         need(model, "We're sorry. There seems to have been error.")
       )
 
-      pred_data <- data.frame(
-        province = user_selected["province"],
-        popcat = user_selected["popcat"],
-        gender = user_selected["gender"],
-        agecat = user_selected["agecat"],
-        race = user_selected["race"],
-        immigrant = user_selected["immigrant"],
-        homeowner = user_selected["homeowner"],
-        education = user_selected["education"],
-        income = user_selected["income"]
-      )
-
-      preds <- predict(model, pred_data, type = "probs")
-      preds <- round(preds * 100, 0)
+      # predict for every respondent in the selected subgroup, then pool by
+      # taking the survey-weighted mean of the predicted probabilities. This
+      # reflects the real demographic composition of the selected group.
+      pred_probs <- predict(model, subgroup, type = "probs")
+      preds <- pool_preds(pred_probs, subgroup$wgt)
       preds <- tidyr::tibble(
         cats = names(preds),
         probs = preds,
