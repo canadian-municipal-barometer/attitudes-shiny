@@ -72,7 +72,7 @@ render_mainpanel <- function(translator_r, statements_r) {
           ),
           p(
             translator_r()$t(
-              "Use the Socio-demographics panel on the left to choose the group whose opinions you want to see. Pick one or more options in each menu; selecting several options in a menu (for example, two age groups) pools them together into a single combined group. At least one option must be selected in every menu for an estimate to appear. Use the Select all button to include everyone, or the Clear button to clear your selections." # nolint
+              "Use the Socio-demographics panel on the left to choose the group whose opinions you want to see. Pick one or more options in each menu; selecting several options in a menu (for example, two age groups) pools them together into a single combined group. At least one option must be selected in every menu for an estimate to appear. Each menu has its own Select all and Clear buttons, and the Clear button at the bottom of the panel empties every menu at once." # nolint
             )
           ),
           p(

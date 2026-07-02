@@ -137,22 +137,43 @@ server <- function(input, output, session) {
 
   output$sidebar_contents <- render_sidebar(translator = translator_r) # nolint
 
-  # "Select all" / "Clear" buttons for the Socio-demographics panel.
+  # Per-menu "Select all" / "Clear" buttons and the panel-wide "Clear" button.
   # ignoreInit = TRUE so they only respond to clicks, keeping menus empty on load.
   demog_select_ids <- c("province", "popcat", "agecat", "education", "income")
   demog_check_ids <- c("gender", "race", "immigrant", "homeowner")
 
-  observeEvent(input$select_all, ignoreInit = TRUE, {
-    ch <- demographic_choices(translator_r())
-    for (id in demog_select_ids) {
-      updateSelectInput(session, id, selected = ch[[id]])
+  # per-menu select-all and clear (each acts on just its own menu)
+  lapply(demographic_vars, function(v) {
+    sel_id <- paste0("select_all_", v)
+    clr_id <- paste0("clear_", v)
+    update_menu <- function(selected) {
+      if (v %in% demog_select_ids) {
+        updateSelectInput(session, v, selected = selected)
+      } else {
+        updateCheckboxGroupInput(session, v, selected = selected)
+      }
     }
-    for (id in demog_check_ids) {
-      updateCheckboxGroupInput(session, id, selected = ch[[id]])
-    }
+    # buttons reset to 0 when the sidebar re-renders (e.g. language toggle);
+    # ignore that so a prior click doesn't re-fire
+    observeEvent(input[[sel_id]], ignoreInit = TRUE, {
+      if (is.null(input[[sel_id]]) || input[[sel_id]] == 0) {
+        return(NULL)
+      }
+      update_menu(demographic_choices(translator_r())[[v]])
+    })
+    observeEvent(input[[clr_id]], ignoreInit = TRUE, {
+      if (is.null(input[[clr_id]]) || input[[clr_id]] == 0) {
+        return(NULL)
+      }
+      update_menu(character(0))
+    })
   })
 
+  # clear every menu at once
   observeEvent(input$clear_demographics, ignoreInit = TRUE, {
+    if (is.null(input$clear_demographics) || input$clear_demographics == 0) {
+      return(NULL)
+    }
     for (id in demog_select_ids) {
       updateSelectInput(session, id, selected = character(0))
     }

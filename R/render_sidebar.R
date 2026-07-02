@@ -4,8 +4,39 @@ render_sidebar <- function(translator) {
   renderUI({
     message("\n`sidebar_contents` declared\n")
 
-    # translated choice lists, shared with the server's "Select all" observer
-    choices <- demographic_choices(translator())
+    tr <- translator()
+    # translated choice lists, shared with the server's per-menu observers
+    choices <- demographic_choices(tr)
+
+    # each menu is rendered with its own label row carrying compact per-menu
+    # "Select all" and "Clear" buttons (wired up in server.R). The label is
+    # drawn manually so the buttons can sit beside it.
+    menu <- function(id, label, widget) {
+      div(
+        div(
+          style = "
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+          ",
+          tags$label(label, style = "font-weight: bold; margin-bottom: 2px;"),
+          div(
+            style = "display: flex; gap: 4px;",
+            actionButton(
+              paste0("select_all_", id),
+              tr$t("Select all"),
+              class = "btn-xs"
+            ),
+            actionButton(
+              paste0("clear_", id),
+              tr$t("Clear"),
+              class = "btn-xs"
+            )
+          )
+        ),
+        widget
+      )
+    }
 
     sidebarPanel(
       style = "
@@ -14,83 +45,68 @@ render_sidebar <- function(translator) {
           background-color: #e6eff7 !important;
           ",
       tags$h4(
-        translator()$t("Socio-demographics"),
+        tr$t("Socio-demographics"),
         style = "margin-top: 0; font-weight: bold;"
       ),
-      # bulk-selection controls (wired up in server.R)
-      div(
-        style = "display: flex; gap: 8px; margin-bottom: 12px;",
-        actionButton(
-          "select_all",
-          translator()$t("Select all"),
-          class = "btn-sm"
-        ),
-        actionButton(
-          "clear_demographics",
-          translator()$t("Clear"),
-          class = "btn-sm"
-        )
+      menu(
+        "province",
+        tr$t("Province:"),
+        selectInput("province", label = NULL, choices = choices$province, multiple = TRUE)
       ),
-      selectInput(
-        inputId = "province",
-        label = translator()$t("Province:"),
-        choices = choices$province,
-        multiple = TRUE
+      menu(
+        "popcat",
+        tr$t("Population:"),
+        selectInput("popcat", label = NULL, choices = choices$popcat, multiple = TRUE)
       ),
-      selectInput(
-        inputId = "popcat",
-        label = translator()$t("Population:"),
-        choices = choices$popcat,
-        multiple = TRUE
+      menu(
+        "gender",
+        tr$t("Gender:"),
+        checkboxGroupInput("gender", label = NULL, choices = choices$gender, inline = TRUE)
       ),
-      checkboxGroupInput(
-        inputId = "gender",
-        label = translator()$t("Gender:"),
-        choices = choices$gender,
-        inline = TRUE
+      menu(
+        "agecat",
+        tr$t("Age:"),
+        selectInput("agecat", label = NULL, choices = choices$agecat, multiple = TRUE)
       ),
-      selectInput(
-        inputId = "agecat",
-        label = translator()$t("Age:"),
-        choices = choices$agecat,
-        multiple = TRUE
+      menu(
+        "race",
+        tr$t("Race:"),
+        checkboxGroupInput("race", label = NULL, choices = choices$race)
       ),
-      checkboxGroupInput(
-        inputId = "race",
-        label = translator()$t("Race:"),
-        choices = choices$race
+      menu(
+        "immigrant",
+        tr$t("Immigrant:"),
+        checkboxGroupInput("immigrant", label = NULL, choices = choices$immigrant, inline = TRUE)
       ),
-      checkboxGroupInput(
-        inputId = "immigrant",
-        label = translator()$t("Immigrant:"),
-        choices = choices$immigrant,
-        inline = TRUE
+      menu(
+        "homeowner",
+        tr$t("Homeowner:"),
+        checkboxGroupInput("homeowner", label = NULL, choices = choices$homeowner, inline = TRUE)
       ),
-      checkboxGroupInput(
-        inputId = "homeowner",
-        label = translator()$t("Homeowner:"),
-        choices = choices$homeowner,
-        inline = TRUE
+      menu(
+        "education",
+        tr$t("Education:"),
+        selectInput("education", label = NULL, choices = choices$education, multiple = TRUE)
       ),
-      selectInput(
-        inputId = "education",
-        label = translator()$t("Education:"),
-        choices = choices$education,
-        multiple = TRUE
-      ),
-      selectInput(
-        inputId = "income",
-        label = translator()$t("Income:"),
-        choices = choices$income,
-        multiple = TRUE
+      menu(
+        "income",
+        tr$t("Income:"),
+        selectInput("income", label = NULL, choices = choices$income, multiple = TRUE)
       ),
       br(),
       shinyWidgets::materialSwitch(
         inputId = "avg_switch",
-        label = translator()$t("Compare to the national average"),
+        label = tr$t("Compare to the national average"),
         value = TRUE,
         status = "primary"
       ),
+      br(),
+      # panel-wide clear at the bottom (per-menu clears sit on each menu above)
+      actionButton(
+        "clear_demographics",
+        tr$t("Clear"),
+        class = "btn-sm"
+      )
     )
   })
 }
