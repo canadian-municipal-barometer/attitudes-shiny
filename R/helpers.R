@@ -7,6 +7,52 @@ demographic_vars <- c(
   "immigrant", "homeowner", "education", "income"
 )
 
+# Choice vectors for the nine Socio-demographics menus, translated via the given
+# translator instance. Shared by the sidebar (to build the menus) and the server
+# (so the "Select all" button can select every option in the current language).
+demographic_choices <- function(translator) {
+  list(
+    province = translator$t(c(
+      "Alberta",
+      "British Columbia",
+      "Manitoba",
+      "New Brunswick",
+      "Newfoundland and Labrador",
+      "Nova Scotia",
+      "Ontario",
+      "Prince Edward Island",
+      "Quebec",
+      "Saskatchewan"
+    )),
+    popcat = c(
+      "3000-9,999",
+      "10,000-49,999",
+      "50,000-249,999",
+      "250,000-999,999",
+      "1,000,000+"
+    ),
+    gender = translator$t(c("Woman", "Man")),
+    agecat = c("18-29", "30-44", "45-59", "60+"),
+    race = translator$t(c("Racialized minority", "White")),
+    immigrant = translator$t(c("Yes", "No")),
+    homeowner = translator$t(c("Yes", "No")),
+    education = translator$t(c(
+      "Less than high school",
+      "High school",
+      "Associate's degree or trades",
+      "Bachelor's degree",
+      "Post-graduate degree"
+    )),
+    income = c(
+      translator$t("Less than $49,999"),
+      "$50,000 - $99,999",
+      "$100,000 - $149,999",
+      "$150,000 - $199,999",
+      translator$t("$200,000 or more")
+    )
+  )
+}
+
 # Vectorized French -> English lookup. `x` may be a character vector (the
 # sidebar menus are now multi-select), NULL, or empty. Values not found in
 # `map` (e.g. values that are already English, or identical in both languages)

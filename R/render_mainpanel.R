@@ -6,8 +6,12 @@ render_mainpanel <- function(translator_r, statements_r) {
     mainPanel(
       tabsetPanel(
         type = "pill",
+        # open on the Instructions tab; explicit `value`s keep the default
+        # stable across the FR/EN toggle (which re-renders this UI)
+        selected = "instructions",
         tabPanel(
           title = translator_r()$t("Plot"),
+          value = "plot",
           # prevent lazy loading
           loadOnActivate = FALSE,
           suspendWhenHidden = FALSE,
@@ -15,7 +19,7 @@ render_mainpanel <- function(translator_r, statements_r) {
           h1("\n"),
           p(
             translator_r()$t(
-              "Please select one or more policy domains, and then choose a specific policy from the drop-down menu below."
+              "Please select a policy domain, and then choose a specific policy from the drop-down menu below."
             ) # nolint
           ),
           # select the policy group to filter by
@@ -48,6 +52,7 @@ render_mainpanel <- function(translator_r, statements_r) {
         ),
         tabPanel(
           title = translator_r()$t("Instructions"),
+          value = "instructions",
           h1("\n"),
           p(translator_r()$t("Welcome!")),
           p(
@@ -57,17 +62,28 @@ render_mainpanel <- function(translator_r, statements_r) {
           ),
           p(
             translator_r()$t(
-              'In the first menu of the "Plot" tab above, select one or more policy domains. The second menu contains specific policy statements belonging to the policy domains you selected. Use the second menu to view public opinion on a specific policy.' # nolint
+              'In the first menu of the "Plot" tab above, select a policy domain. The second menu contains specific policy statements belonging to the policy domain you selected. Use the second menu to view public opinion on a specific policy.' # nolint
             )
           ),
           p(
             translator_r()$t(
-              "Finally, adjust the set of characteristics in the panel to the left to see how different groups view the policy you have selected. When you're done, you can select a new policy by again using the menus above the plot." # nolint
+              "Select characteristics in the panel to the left see how different groups view the selected policy. You can change which policy you are viewing at any time using the policy menus above the plot." # nolint
+            )
+          ),
+          p(
+            translator_r()$t(
+              "Use the Socio-demographics panel on the left to choose the group whose opinions you want to see. Pick one or more options in each menu; selecting several options in a menu (for example, two age groups) pools them together into a single combined group. At least one option must be selected in every menu for an estimate to appear. Use the Select all button to include everyone, or the Reset button to clear your selections." # nolint
+            )
+          ),
+          p(
+            translator_r()$t(
+              "In the plot, the coloured bars show the estimate for the group you selected, and the grey bars show the national average for comparison. With everything selected, the two match, because your selection covers the whole population." # nolint
             )
           )
         ),
         tabPanel(
           title = translator_r()$t("Details"),
+          value = "details",
           h1("\n"),
           p(
             translator_r()$t(

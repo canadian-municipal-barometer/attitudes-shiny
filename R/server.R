@@ -24,8 +24,8 @@ input_err_en <- "The combination of the policy question and demographic characte
 input_err_fr <- "La combinaison de la question de politique publique et des caractéristiques démographiques que vous avez sélectionnée ne figure pas dans les données. Veuillez faire une autre sélection." # nolint
 
 # the prompt shown when a demographic menu has been emptied
-select_prompt_en <- "Please select at least one option in every menu to see the opinion estimates." # nolint
-select_prompt_fr <- "Veuillez sélectionner au moins une option dans chaque menu pour afficher les estimations." # nolint
+select_prompt_en <- "Please select at least one option in each menu of the Socio-demographics panel to see the opinion estimates." # nolint
+select_prompt_fr <- "Veuillez sélectionner au moins une option dans chaque menu du panneau Sociodémographie pour afficher les estimations." # nolint
 
 # load translation file to create shiny.i18n translator object
 translator <- shiny.i18n::Translator$new(
@@ -136,6 +136,30 @@ server <- function(input, output, session) {
   # sidebar
 
   output$sidebar_contents <- render_sidebar(translator = translator_r) # nolint
+
+  # "Select all" / "Reset" buttons for the Socio-demographics panel.
+  # ignoreInit = TRUE so they only respond to clicks, keeping menus empty on load.
+  demog_select_ids <- c("province", "popcat", "agecat", "education", "income")
+  demog_check_ids <- c("gender", "race", "immigrant", "homeowner")
+
+  observeEvent(input$select_all, ignoreInit = TRUE, {
+    ch <- demographic_choices(translator_r())
+    for (id in demog_select_ids) {
+      updateSelectInput(session, id, selected = ch[[id]])
+    }
+    for (id in demog_check_ids) {
+      updateCheckboxGroupInput(session, id, selected = ch[[id]])
+    }
+  })
+
+  observeEvent(input$reset_demographics, ignoreInit = TRUE, {
+    for (id in demog_select_ids) {
+      updateSelectInput(session, id, selected = character(0))
+    }
+    for (id in demog_check_ids) {
+      updateCheckboxGroupInput(session, id, selected = character(0))
+    }
+  })
 
   # plot
 
