@@ -26,8 +26,8 @@ render_sidebar <- function(translator) {
           class = "btn-sm"
         ),
         actionButton(
-          "reset_demographics",
-          translator()$t("Reset"),
+          "clear_demographics",
+          translator()$t("Clear"),
           class = "btn-sm"
         )
       ),

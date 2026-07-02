@@ -137,7 +137,7 @@ server <- function(input, output, session) {
 
   output$sidebar_contents <- render_sidebar(translator = translator_r) # nolint
 
-  # "Select all" / "Reset" buttons for the Socio-demographics panel.
+  # "Select all" / "Clear" buttons for the Socio-demographics panel.
   # ignoreInit = TRUE so they only respond to clicks, keeping menus empty on load.
   demog_select_ids <- c("province", "popcat", "agecat", "education", "income")
   demog_check_ids <- c("gender", "race", "immigrant", "homeowner")
@@ -152,7 +152,7 @@ server <- function(input, output, session) {
     }
   })
 
-  observeEvent(input$reset_demographics, ignoreInit = TRUE, {
+  observeEvent(input$clear_demographics, ignoreInit = TRUE, {
     for (id in demog_select_ids) {
       updateSelectInput(session, id, selected = character(0))
     }
