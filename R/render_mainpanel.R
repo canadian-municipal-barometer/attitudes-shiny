@@ -57,7 +57,7 @@ render_mainpanel <- function(translator_r, statements_r) {
           ),
           p(
             translator_r()$t(
-              'In the first menu of the "Plot" tab above, select one or more policy domains. The second menu contains specific policy statements belonging to the policy domains you selected. Use the second menu to view public opinion on a specific policy. To clear the policy domain box, press the "Reset" button.' # nolint
+              'In the first menu of the "Plot" tab above, select one or more policy domains. The second menu contains specific policy statements belonging to the policy domains you selected. Use the second menu to view public opinion on a specific policy.' # nolint
             )
           ),
           p(
@@ -87,7 +87,7 @@ render_mainpanel <- function(translator_r, statements_r) {
           ),
           p(
             translator_r()$t(
-              "Note that due to there being a small number of responses in Prince Edward Island, many of the policy issues for that province do not produce reliable estimates of public opinion, and sometimes this leads to odd results when Prince Edward Island is selected." # nolint
+              "Note that due to there being a small number of responses in Prince Edward Island, many of the policy issues for that province do not produce reliable estimates of public opinion. Sometimes this leads to odd results when Prince Edward Island is selected." # nolint
             )
           )
         )
