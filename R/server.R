@@ -10,11 +10,14 @@ default_language <- "en"
 # main voter data
 svy_data <- readRDS("data/voter-data.rds")
 
-# statement data
+# survey years present in the data, for the sidebar year filter
+available_years <- sort(unique(svy_data$year))
+
+# statement data. Policy-domain choices are now derived from these tables
+# (filtered by the selected year) rather than from standalone statement_tags
+# files, so the app naturally offers only the domains present in the chosen years.
 statements_en <- readRDS("data/statements_en.rds")
-statement_tags_en <- readRDS("data/statement_tags_en.rds")
 statements_fr <- readRDS("data/statements_fr.rds")
-statement_tags_fr <- readRDS("data/statement_tags_fr.rds")
 
 # national average data
 natl_avg <- readRDS("data/natl_avg.rds")
@@ -38,7 +41,6 @@ server <- function(input, output, session) {
   # Initialize reactive values
   current_lang_r <- reactiveVal(default_language)
   statements_r <- reactiveVal(statements_en) # nolint
-  statement_tags_r <- reactiveVal(statement_tags_en) # nolint
   svy_data_r <- reactiveVal(svy_data) #nolint
   input_err_r <- reactiveVal(input_err_en)
   select_prompt_r <- reactiveVal(select_prompt_en)
@@ -52,7 +54,6 @@ server <- function(input, output, session) {
       current_lang_r("fr")
 
       statements_r(statements_fr)
-      statement_tags_r(statement_tags_fr)
       input_err_r(input_err_fr)
       select_prompt_r(select_prompt_fr)
 
@@ -62,7 +63,6 @@ server <- function(input, output, session) {
       current_lang_r("en")
 
       statements_r(statements_en)
-      statement_tags_r(statement_tags_en)
       input_err_r(input_err_en)
       select_prompt_r(select_prompt_en)
 
@@ -81,13 +81,32 @@ server <- function(input, output, session) {
 
   # main reactive elements --------------------
 
+  # Statements restricted to the selected survey year(s), in the current
+  # language. `input$year` holds character values from the checkbox menu; the
+  # data's `year` column is integer, hence the coercion.
+  statements_year_r <- reactive({
+    yrs <- req(input$year)
+    statements_r() |>
+      dplyr::filter(year %in% as.integer(yrs))
+  })
+
+  # Policy-domain choices, derived from the year-filtered statements (this is
+  # what the removed statement_tags_* files used to provide). Selecting only one
+  # year therefore drops domains that exist only in the other year.
+  domain_choices_r <- reactive({
+    statements_year_r()$tags |>
+      unlist() |>
+      unique() |>
+      sort()
+  })
+
   # Policy domain menu
   output$select_domain <- renderUI({
     message("`select_domain` initialized")
     selectInput(
       inputId = "select_domain",
       label = translator_r()$t("Policy domain:"),
-      choices = statement_tags_r(), # nolint
+      choices = domain_choices_r(), # nolint
       selectize = TRUE,
       width = "325px"
     )
@@ -106,22 +125,27 @@ server <- function(input, output, session) {
     )
   })
 
-  observeEvent(statement_tags_r(), {
+  # Refresh the domain menu whenever the available domains change — i.e. on a
+  # language toggle or a change to the year filter.
+  observeEvent(domain_choices_r(), {
     message("\n`select_domain` UI update")
     updateSelectInput(
       session,
       "select_domain",
-      choices = statement_tags_r()
+      choices = domain_choices_r()
     )
   })
 
-  # update policy statement menu based on policy domain menu
-  observeEvent(input$select_domain, {
+  # Update the policy-statement menu from the selected domain. Re-fires on a
+  # year change too (with the same domain the statement list still differs), so
+  # the policy menu never shows statements from a deselected year. Uses the
+  # year-filtered statements as its source.
+  observeEvent(list(input$select_domain, input$year), {
     message("\n`select_domain` observer")
     statements_update(
       session = session,
       translator_r = translator_r,
-      statements_r = statements_r,
+      statements_r = statements_year_r,
       domain = input$select_domain
     )
   })
@@ -135,37 +159,31 @@ server <- function(input, output, session) {
 
   # sidebar
 
-  output$sidebar_contents <- render_sidebar(translator = translator_r) # nolint
+  output$sidebar_contents <- render_sidebar(translator = translator_r, years = available_years) # nolint
 
   # Per-menu "Select all" / "Clear" buttons and the panel-wide "Clear" button.
   # ignoreInit = TRUE so they only respond to clicks, keeping menus empty on load.
   demog_select_ids <- c("province", "popcat", "agecat", "education", "income")
   demog_check_ids <- c("gender", "race", "immigrant", "homeowner")
 
-  # per-menu select-all and clear (each acts on just its own menu)
-  lapply(demographic_vars, function(v) {
+  # per-menu select-all and clear (only the dropdown menus carry these buttons;
+  # the checkbox menus have few options and none)
+  lapply(demog_select_ids, function(v) {
     sel_id <- paste0("select_all_", v)
     clr_id <- paste0("clear_", v)
-    update_menu <- function(selected) {
-      if (v %in% demog_select_ids) {
-        updateSelectInput(session, v, selected = selected)
-      } else {
-        updateCheckboxGroupInput(session, v, selected = selected)
-      }
-    }
     # buttons reset to 0 when the sidebar re-renders (e.g. language toggle);
     # ignore that so a prior click doesn't re-fire
     observeEvent(input[[sel_id]], ignoreInit = TRUE, {
       if (is.null(input[[sel_id]]) || input[[sel_id]] == 0) {
         return(NULL)
       }
-      update_menu(demographic_choices(translator_r())[[v]])
+      updateSelectInput(session, v, selected = demographic_choices(translator_r())[[v]])
     })
     observeEvent(input[[clr_id]], ignoreInit = TRUE, {
       if (is.null(input[[clr_id]]) || input[[clr_id]] == 0) {
         return(NULL)
       }
-      update_menu(character(0))
+      updateSelectInput(session, v, selected = character(0))
     })
   })
 
@@ -191,6 +209,20 @@ server <- function(input, output, session) {
       svy_data_r = svy_data_r,
       policy = input$policy
     )
+  })
+
+  # Caption under the policy statement: the survey year it was asked in. Kept in
+  # the server (not render_mainpanel) so it updates on each policy/language
+  # change without re-rendering the whole tabset. Reacts to the language toggle
+  # via statements_r() (swaps EN/FR) and translator_r().
+  output$policy_year <- renderText({
+    req(input$policy)
+    idx <- which(statements_r()$statement == input$policy)
+    if (length(idx) == 0) {
+      return("")
+    }
+    yr <- statements_r()$year[idx[1]]
+    sprintf(translator_r()$t("Asked in %s"), yr)
   })
 
   # un-translated inputs if they were translated to French in the UI

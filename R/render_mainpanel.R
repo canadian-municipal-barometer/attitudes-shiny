@@ -39,6 +39,11 @@ render_mainpanel <- function(translator_r, statements_r) {
             id = "policy-div",
             uiOutput(outputId = "policy")
           ),
+          # survey year the selected statement was asked in (populated in server)
+          div(
+            style = "margin: 4px 0 8px; color: #6b7280; font-style: italic;",
+            textOutput("policy_year", inline = TRUE)
+          ),
           # plot
           div(
             id = "plot-container",
@@ -67,12 +72,12 @@ render_mainpanel <- function(translator_r, statements_r) {
           ),
           p(
             translator_r()$t(
-              "Select characteristics in the panel to the left see how different groups view the selected policy. You can change which policy you are viewing at any time using the policy menus above the plot." # nolint
+              "Select characteristics in the panel to the left to see how different groups view the selected policy. You can change which policy you are viewing at any time using the policy menus above the plot." # nolint
             )
           ),
           p(
             translator_r()$t(
-              "Use the Socio-demographics panel on the left to choose the group whose opinions you want to see. Pick one or more options in each menu; selecting several options in a menu (for example, two age groups) pools them together into a single combined group. At least one option must be selected in every menu for an estimate to appear. Each menu has its own Select all and Clear buttons, and the Clear button at the bottom of the panel empties every menu at once." # nolint
+              "Use the Socio-demographics panel on the left to choose the group whose opinions you want to see. Pick one or more options in each menu; selecting several options in a menu (for example, two age groups) pools them together into a single combined group. At least one option must be selected in every menu for an estimate to appear. The dropdown menus each have Select all and Clear buttons, and the Clear button at the bottom of the panel empties every menu at once." # nolint
             )
           ),
           p(
@@ -87,7 +92,7 @@ render_mainpanel <- function(translator_r, statements_r) {
           h1("\n"),
           p(
             translator_r()$t(
-              "The data for this app come from the Canadian Municipal Barometer's annual Citizen Survey. Currently, it uses the 2025 data. It will soon be updated with more questions from the 2025 survey, and, in future years, new surveys will be added." # nolint
+              "The data for this app come from the Canadian Municipal Barometer's annual Citizen Survey. Use the Survey year filter to choose which survey wave(s) to view; each policy statement shows the year it was asked. New survey waves are added over time." # nolint
             )
           ),
           p(

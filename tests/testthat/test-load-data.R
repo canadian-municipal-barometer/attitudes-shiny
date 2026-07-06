@@ -4,7 +4,7 @@ test_that("statement data colnames are correct", {
   # (Posit Connect Cloud) seems to require a different structure than what a
   # real package has.
   setwd("../../")
-  colnames <- c("tags", "statement", "var_name")
+  colnames <- c("tags", "statement", "var_name", "year")
   data_en <- readRDS("data/statements_en.rds")
   data_fr <- readRDS("data/statements_fr.rds")
   test_colnames_en <- data_en |> colnames()

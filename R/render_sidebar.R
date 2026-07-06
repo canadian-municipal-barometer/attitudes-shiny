@@ -1,6 +1,6 @@
 library(shiny)
 
-render_sidebar <- function(translator) {
+render_sidebar <- function(translator, years) {
   renderUI({
     message("\n`sidebar_contents` declared\n")
 
@@ -8,11 +8,11 @@ render_sidebar <- function(translator) {
     # translated choice lists, shared with the server's per-menu observers
     choices <- demographic_choices(tr)
 
-    # each menu is rendered with its own label row carrying compact per-menu
-    # "Select all" and "Clear" buttons (wired up in server.R). The label is
-    # drawn manually so the buttons can sit beside it.
-    menu <- function(id, label, widget) {
-      div(
+    # each menu is rendered with a bold label. The dropdown menus additionally
+    # carry compact per-menu "Select all" / "Clear" buttons beside the label
+    # (wired up in server.R); the checkbox menus (few options) omit them.
+    menu <- function(id, label, widget, buttons = TRUE) {
+      header <- if (buttons) {
         div(
           style = "
             display: flex;
@@ -33,9 +33,14 @@ render_sidebar <- function(translator) {
               class = "btn-xs"
             )
           )
-        ),
-        widget
-      )
+        )
+      } else {
+        tags$label(
+          label,
+          style = "font-weight: bold; margin-bottom: 2px; display: block;"
+        )
+      }
+      div(header, widget)
     }
 
     sidebarPanel(
@@ -44,9 +49,30 @@ render_sidebar <- function(translator) {
           min-width: 225px;
           background-color: #e6eff7 !important;
           ",
+      # Survey-year filter. Its own section above the demographics, because a
+      # survey year is a property of the question, not of the respondent. All
+      # years selected by default. Deliberately NOT wired into the panel-wide
+      # "Clear" (server's demog_*_ids), so clearing demographics leaves it alone.
+      tags$h4(
+        tr$t("Survey year"),
+        style = "margin-top: 0; font-weight: bold;"
+      ),
+      menu(
+        "year",
+        tr$t("Survey year:"),
+        checkboxGroupInput(
+          "year",
+          label = NULL,
+          choices = years,
+          selected = years,
+          inline = TRUE
+        ),
+        buttons = FALSE
+      ),
+      tags$hr(),
       tags$h4(
         tr$t("Socio-demographics"),
-        style = "margin-top: 0; font-weight: bold;"
+        style = "font-weight: bold;"
       ),
       menu(
         "province",
@@ -61,7 +87,8 @@ render_sidebar <- function(translator) {
       menu(
         "gender",
         tr$t("Gender:"),
-        checkboxGroupInput("gender", label = NULL, choices = choices$gender, inline = TRUE)
+        checkboxGroupInput("gender", label = NULL, choices = choices$gender, inline = TRUE),
+        buttons = FALSE
       ),
       menu(
         "agecat",
@@ -71,17 +98,20 @@ render_sidebar <- function(translator) {
       menu(
         "race",
         tr$t("Race:"),
-        checkboxGroupInput("race", label = NULL, choices = choices$race)
+        checkboxGroupInput("race", label = NULL, choices = choices$race),
+        buttons = FALSE
       ),
       menu(
         "immigrant",
         tr$t("Immigrant:"),
-        checkboxGroupInput("immigrant", label = NULL, choices = choices$immigrant, inline = TRUE)
+        checkboxGroupInput("immigrant", label = NULL, choices = choices$immigrant, inline = TRUE),
+        buttons = FALSE
       ),
       menu(
         "homeowner",
         tr$t("Homeowner:"),
-        checkboxGroupInput("homeowner", label = NULL, choices = choices$homeowner, inline = TRUE)
+        checkboxGroupInput("homeowner", label = NULL, choices = choices$homeowner, inline = TRUE),
+        buttons = FALSE
       ),
       menu(
         "education",
@@ -101,7 +131,7 @@ render_sidebar <- function(translator) {
         status = "primary"
       ),
       br(),
-      # panel-wide clear at the bottom (per-menu clears sit on each menu above)
+      # panel-wide clear at the bottom (empties every menu, including checkboxes)
       actionButton(
         "clear_demographics",
         tr$t("Clear"),
