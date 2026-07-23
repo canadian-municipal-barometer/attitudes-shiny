@@ -53,10 +53,6 @@ render_sidebar <- function(translator, years) {
       # survey year is a property of the question, not of the respondent. All
       # years selected by default. Deliberately NOT wired into the panel-wide
       # "Clear" (server's demog_*_ids), so clearing demographics leaves it alone.
-      tags$h4(
-        tr$t("Survey year"),
-        style = "margin-top: 0; font-weight: bold;"
-      ),
       menu(
         "year",
         tr$t("Survey year:"),
@@ -69,7 +65,6 @@ render_sidebar <- function(translator, years) {
         ),
         buttons = FALSE
       ),
-      tags$hr(),
       tags$h4(
         tr$t("Socio-demographics"),
         style = "font-weight: bold;"
@@ -77,23 +72,43 @@ render_sidebar <- function(translator, years) {
       menu(
         "province",
         tr$t("Province:"),
-        selectInput("province", label = NULL, choices = choices$province, multiple = TRUE)
+        selectInput(
+          "province",
+          label = NULL,
+          choices = choices$province,
+          multiple = TRUE
+        )
       ),
       menu(
         "popcat",
         tr$t("Population:"),
-        selectInput("popcat", label = NULL, choices = choices$popcat, multiple = TRUE)
+        selectInput(
+          "popcat",
+          label = NULL,
+          choices = choices$popcat,
+          multiple = TRUE
+        )
       ),
       menu(
         "gender",
         tr$t("Gender:"),
-        checkboxGroupInput("gender", label = NULL, choices = choices$gender, inline = TRUE),
+        checkboxGroupInput(
+          "gender",
+          label = NULL,
+          choices = choices$gender,
+          inline = TRUE
+        ),
         buttons = FALSE
       ),
       menu(
         "agecat",
         tr$t("Age:"),
-        selectInput("agecat", label = NULL, choices = choices$agecat, multiple = TRUE)
+        selectInput(
+          "agecat",
+          label = NULL,
+          choices = choices$agecat,
+          multiple = TRUE
+        )
       ),
       menu(
         "race",
@@ -104,24 +119,44 @@ render_sidebar <- function(translator, years) {
       menu(
         "immigrant",
         tr$t("Immigrant:"),
-        checkboxGroupInput("immigrant", label = NULL, choices = choices$immigrant, inline = TRUE),
+        checkboxGroupInput(
+          "immigrant",
+          label = NULL,
+          choices = choices$immigrant,
+          inline = TRUE
+        ),
         buttons = FALSE
       ),
       menu(
         "homeowner",
         tr$t("Homeowner:"),
-        checkboxGroupInput("homeowner", label = NULL, choices = choices$homeowner, inline = TRUE),
+        checkboxGroupInput(
+          "homeowner",
+          label = NULL,
+          choices = choices$homeowner,
+          inline = TRUE
+        ),
         buttons = FALSE
       ),
       menu(
         "education",
         tr$t("Education:"),
-        selectInput("education", label = NULL, choices = choices$education, multiple = TRUE)
+        selectInput(
+          "education",
+          label = NULL,
+          choices = choices$education,
+          multiple = TRUE
+        )
       ),
       menu(
         "income",
         tr$t("Income:"),
-        selectInput("income", label = NULL, choices = choices$income, multiple = TRUE)
+        selectInput(
+          "income",
+          label = NULL,
+          choices = choices$income,
+          multiple = TRUE
+        )
       ),
       br(),
       shinyWidgets::materialSwitch(
