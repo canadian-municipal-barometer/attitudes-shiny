@@ -110,6 +110,15 @@ render_mainpanel <- function(translator_r, statements_r) {
             translator_r()$t(
               "Note that due to there being a small number of responses in Prince Edward Island, many of the policy issues for that province do not produce reliable estimates of public opinion. Sometimes this leads to odd results when Prince Edward Island is selected." # nolint
             )
+          ),
+          p(
+            translator_r()$t("Please send feedback and questions to "),
+            a(
+              "cmb@ucalgary.ca",
+              href = "mailto:cmb@ucalgary.ca",
+              .noWS = c("after")
+            ),
+            "."
           )
         )
       )
