@@ -212,6 +212,10 @@ simple_plot <- function(preds) {
       size = 5
     ) +
     ggplot2::coord_flip() +
+    ggplot2::scale_y_continuous(
+      limits = c(0, 100),
+      expand = ggplot2::expansion(mult = c(0, 0.12))
+    ) +
     ggplot2::theme_minimal(base_size = 20) +
     ggplot2::scale_fill_manual(
       values = c(
@@ -243,6 +247,10 @@ natl_avg_plot <- function(preds) {
       position = ggplot2::position_dodge(width = 0.9),
       hjust = -0.1,
       size = 5
+    ) +
+    ggplot2::scale_y_continuous(
+      limits = c(0, 100),
+      expand = ggplot2::expansion(mult = c(0, 0.12))
     ) +
     ggplot2::theme_minimal(base_size = 20) +
     ggplot2::theme(
