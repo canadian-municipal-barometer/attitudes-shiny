@@ -162,7 +162,7 @@ render_sidebar <- function(translator, years) {
       shinyWidgets::materialSwitch(
         inputId = "avg_switch",
         label = tr$t("Compare to the national average"),
-        value = TRUE,
+        value = FALSE,
         status = "primary"
       ),
       br(),
